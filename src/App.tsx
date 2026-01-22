@@ -1,14 +1,22 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import StartMenu from './components/StartMenu'
 import TypeStrike from './components/TypeStrike'
 
 function App() {
   const [gameStarted, setGameStarted] = useState(false)
 
-  return gameStarted ? (
-    <TypeStrike onHome={() => setGameStarted(false)} />
-  ) : (
-    <StartMenu onStart={() => setGameStarted(true)} />
+  const handleStartGame = () => {
+    setGameStarted(true)
+  }
+
+  return (
+    <>
+      {gameStarted ? (
+        <TypeStrike onHome={() => setGameStarted(false)} isInitialLoad={true} />
+      ) : (
+        <StartMenu onStart={handleStartGame} />
+      )}
+    </>
   )
 }
 

@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FaPause, FaPlay, FaRedo, FaHome } from "react-icons/fa";
+import { StatsManager } from "../utils/statsManager";
 import "../styles/game.css";
 
 interface TypeStrikeProps {
   onHome?: () => void;
+  isInitialLoad?: boolean;
 }
 
 interface Mine {
@@ -26,7 +28,7 @@ interface GameState {
   isPaused: boolean;
 }
 
-export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome }) => {
+export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad }) => {
   const [mines, setMines] = useState<Mine[]>([]);
   const [gameState, setGameState] = useState<GameState>({
     level: 1,
@@ -39,8 +41,12 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome }) => {
   });
   const [input, setInput] = useState("");
   const [targetedMineId, setTargetedMineId] = useState<string | null>(null);
+  const [wordsDestroyed, setWordsDestroyed] = useState(0);
+  const [totalAttempts, setTotalAttempts] = useState(0);
+  const [countdownTimer, setCountdownTimer] = useState<number | null>(isInitialLoad ? 3 : null);
   const gameLoopRef = useRef<number | null>(null);
   const gameStartTimeRef = useRef<number>(0);
+  const sessionStartTimeRef = useRef<number>(Date.now());
 
   // Word bank for different levels
   const wordBanks = [
@@ -234,13 +240,30 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome }) => {
     wordBanks[Math.min(gameState.level - 1, wordBanks.length - 1)];
   const finishLineY = 90;
 
+  // Countdown timer effect
+  useEffect(() => {
+    if (countdownTimer === null) return;
+
+    if (countdownTimer === 0) {
+      setCountdownTimer(null);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCountdownTimer(countdownTimer - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [countdownTimer]);
+
   // Initialize game / spawn new wave
   useEffect(() => {
     if (
       !gameState.gameOver &&
       !gameState.levelComplete &&
       !gameState.gameWon &&
-      mines.length === 0
+      mines.length === 0 &&
+      countdownTimer === null
     ) {
       spawnWave();
     }
@@ -249,6 +272,7 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome }) => {
     gameState.levelComplete,
     gameState.gameWon,
     mines.length,
+    countdownTimer,
   ]);
 
   // Spawn wave of mines - all at once, with random positions
@@ -293,7 +317,8 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome }) => {
       gameState.levelComplete ||
       gameState.gameWon ||
       gameState.isPaused ||
-      mines.length === 0
+      mines.length === 0 ||
+      countdownTimer !== null
     )
       return;
 
@@ -355,6 +380,7 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome }) => {
     gameState.isPaused,
     mines.length,
     currentWordBank.speed,
+    countdownTimer,
   ]);
 
   // Handle key press for typing
@@ -454,6 +480,10 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome }) => {
                 score: prev.score + 50,
               }));
 
+              // Track stats
+              setWordsDestroyed((prev) => prev + 1);
+              setTotalAttempts((prev) => prev + 1);
+
               // Auto-target next mine
               setTimeout(() => {
                 const nextMine = mines.find(
@@ -473,6 +503,7 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome }) => {
             }));
             setInput("");
             setTargetedMineId(null);
+            setTotalAttempts((prev) => prev + 1);
           }
         }
       }
@@ -509,7 +540,14 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome }) => {
   };
 
   const handlePause = () => {
-    setGameState((prev) => ({ ...prev, isPaused: !prev.isPaused }));
+    setGameState((prev) => {
+      const newPausedState = !prev.isPaused;
+      // Start countdown when resuming
+      if (!newPausedState) {
+        setCountdownTimer(3);
+      }
+      return { ...prev, isPaused: newPausedState };
+    });
   };
 
   const handleStartNextLevel = () => {
@@ -525,9 +563,17 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome }) => {
     });
     setInput("");
     setTargetedMineId(null);
+    setCountdownTimer(3);
   };
 
   const handleRestart = () => {
+    // Record stats before restarting
+    if (wordsDestroyed > 0 || totalAttempts > 0) {
+      const accuracy = totalAttempts > 0 ? Math.round((wordsDestroyed / totalAttempts) * 100) : 0;
+      const timePlayedSeconds = Math.floor((Date.now() - sessionStartTimeRef.current) / 1000);
+      StatsManager.recordGameEnd(gameState.score, gameState.level, accuracy, wordsDestroyed, timePlayedSeconds);
+    }
+
     setMines([]);
     setGameState({
       level: 1,
@@ -540,6 +586,10 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome }) => {
     });
     setInput("");
     setTargetedMineId(null);
+    setWordsDestroyed(0);
+    setTotalAttempts(0);
+    setCountdownTimer(3);
+    sessionStartTimeRef.current = Date.now();
   };
 
   return (
@@ -657,6 +707,12 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome }) => {
             <p className="victory-message">You've completed all 30 levels!</p>
             <button onClick={handleRestart}>Play Again</button>
           </div>
+        </div>
+      )}
+
+      {countdownTimer !== null && (
+        <div className="countdown-container">
+          <div className="countdown-timer">{countdownTimer}</div>
         </div>
       )}
     </div>

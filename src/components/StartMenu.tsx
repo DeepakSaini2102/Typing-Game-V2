@@ -5,7 +5,9 @@ import {
   FaBullseye,
   FaTrophy,
   FaPlay,
+  FaChartBar,
 } from "react-icons/fa";
+import StatsPopup from "./StatsPopup";
 import "../styles/menu.css";
 
 interface StartMenuProps {
@@ -14,6 +16,8 @@ interface StartMenuProps {
 
 export const StartMenu: React.FC<StartMenuProps> = ({ onStart }) => {
   const [hoveredButton, setHoveredButton] = useState<string | null>(null);
+  const [hoveredButton2, setHoveredButton2] = useState<string | null>(null);
+  const [showStatsPopup, setShowStatsPopup] = useState(false);
 
   // Handle Enter key to start game
   useEffect(() => {
@@ -33,8 +37,10 @@ export const StartMenu: React.FC<StartMenuProps> = ({ onStart }) => {
 
       <div className="menu-content">
         <div className="menu-header">
-          <h1 className="menu-title">Type Strike</h1>
-          <p className="menu-subtitle">Master Your Typing Skills</p>
+          <div className="menu-header-content">
+            <h1 className="menu-title">Type Strike</h1>
+            <p className="menu-subtitle">Master Your Typing Skills</p>
+          </div>
         </div>
 
         <div className="menu-description">
@@ -66,17 +72,26 @@ export const StartMenu: React.FC<StartMenuProps> = ({ onStart }) => {
             <span className="feature-text">30 Challenging Levels</span>
           </div>
         </div>
-
-        <button
-          className={`start-button ${hoveredButton === "start" ? "hovered" : "hovered"}`}
-          onClick={onStart}
-          onMouseEnter={() => setHoveredButton("start")}
-          onMouseLeave={() => setHoveredButton(null)}
-        >
-          <span className="button-text">Start Game</span>
-          <FaPlay className="button-icon" />
-        </button>
-
+        <div className="button-actions">
+          <button
+            className={`start-button ${hoveredButton === "start" ? "hovered" : "hovered"}`}
+            onClick={onStart}
+            onMouseEnter={() => setHoveredButton("start")}
+            onMouseLeave={() => setHoveredButton(null)}
+          >
+            <span className="button-text">Start Game</span>
+            <FaPlay className="button-icon" />
+          </button>
+          <button
+            className={`start-button ${hoveredButton2 === "start" ? "hovered" : "hovered"}`}
+            onClick={() => setShowStatsPopup(true)}
+            onMouseEnter={() => setHoveredButton2("start")}
+            onMouseLeave={() => setHoveredButton2(null)}
+          >
+            <span className="button-text">View statistics</span>
+            <FaChartBar className="button-icon" />
+          </button>
+        </div>
         <div className="menu-info">
           <div className="info-item">
             <h3>How to Play</h3>
@@ -98,6 +113,11 @@ export const StartMenu: React.FC<StartMenuProps> = ({ onStart }) => {
       <div className="menu-footer">
         <p>Good luck and sharpen your typing skills!</p>
       </div>
+
+      <StatsPopup
+        isOpen={showStatsPopup}
+        onClose={() => setShowStatsPopup(false)}
+      />
     </div>
   );
 };
