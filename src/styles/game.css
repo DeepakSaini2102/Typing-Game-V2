@@ -93,7 +93,9 @@
   border-radius: 8px;
   background: linear-gradient(180deg, rgba(15, 52, 96, 0.8) 0%, rgba(22, 33, 62, 0.8) 100%);
   overflow: hidden;
-  box-shadow: inset 0 0 20px rgba(0, 212, 255, 0.1), 0 0 30px rgba(0, 212, 255, 0.2);
+  box-shadow:
+    inset 0 0 20px rgba(0, 212, 255, 0.1),
+    0 0 30px rgba(0, 212, 255, 0.2);
 }
 
 .mine {
@@ -113,12 +115,14 @@
   align-items: center;
   justify-content: center;
   border: 3px solid #ff3333;
-  box-shadow: 0 0 15px rgba(255, 107, 107, 0.6), inset 0 0 10px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 0 15px rgba(255, 107, 107, 0.6),
+    inset 0 0 10px rgba(0, 0, 0, 0.3);
   position: relative;
 }
 
 .mine-body::before {
-  content: '';
+  content: "";
   position: absolute;
   width: 100%;
   height: 100%;
@@ -142,12 +146,16 @@
 
 .mine:hover:not(.destroyed) .mine-body {
   transform: scale(1.1);
-  box-shadow: 0 0 20px rgba(255, 107, 107, 0.8), inset 0 0 10px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 0 20px rgba(255, 107, 107, 0.8),
+    inset 0 0 10px rgba(0, 0, 0, 0.3);
 }
 
 .mine.targeted .mine-body {
   animation: pulse-targeted 0.5s ease-in-out infinite;
-  box-shadow: 0 0 25px rgba(0, 212, 255, 0.8), inset 0 0 10px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 0 25px rgba(0, 212, 255, 0.8),
+    inset 0 0 10px rgba(0, 0, 0, 0.3);
   border-color: #00d4ff;
   background: radial-gradient(circle at 30% 30%, #00d4ff, #0099cc);
 }
@@ -168,14 +176,10 @@
   left: 0;
   width: 100%;
   height: 8px;
-  background: repeating-linear-gradient(
-    90deg,
-    #ff1744,
-    #ff1744 10px,
-    #ffffff 10px,
-    #ffffff 20px
-  );
-  box-shadow: 0 0 20px rgba(255, 23, 68, 0.6), inset 0 0 10px rgba(0, 0, 0, 0.3);
+  background: repeating-linear-gradient(90deg, #ff1744, #ff1744 10px, #ffffff 10px, #ffffff 20px);
+  box-shadow:
+    0 0 20px rgba(255, 23, 68, 0.6),
+    inset 0 0 10px rgba(0, 0, 0, 0.3);
   z-index: 100;
 }
 
@@ -205,7 +209,7 @@
   font-weight: bold;
   letter-spacing: 2px;
   min-height: 35px;
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
 }
 
 .input-hint {
@@ -434,7 +438,7 @@
 
 .celebration::before,
 .celebration::after {
-  content: '✨';
+  content: "✨";
   position: absolute;
   font-size: 2rem;
   opacity: 0;
@@ -537,12 +541,17 @@
 }
 
 @keyframes pulse-targeted {
-  0%, 100% {
-    box-shadow: 0 0 20px rgba(0, 212, 255, 0.6), inset 0 0 10px rgba(0, 0, 0, 0.3);
+  0%,
+  100% {
+    box-shadow:
+      0 0 20px rgba(0, 212, 255, 0.6),
+      inset 0 0 10px rgba(0, 0, 0, 0.3);
     transform: scale(1);
   }
   50% {
-    box-shadow: 0 0 35px rgba(0, 212, 255, 1), inset 0 0 10px rgba(0, 0, 0, 0.3);
+    box-shadow:
+      0 0 35px rgba(0, 212, 255, 1),
+      inset 0 0 10px rgba(0, 0, 0, 0.3);
     transform: scale(1.08);
   }
 }
@@ -586,19 +595,28 @@
 }
 
 @keyframes shake {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateX(0);
   }
-  10%, 30%, 50%, 70%, 90% {
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
     transform: translateX(-5px);
   }
-  20%, 40%, 60%, 80% {
+  20%,
+  40%,
+  60%,
+  80% {
     transform: translateX(5px);
   }
 }
 
 @keyframes bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
