@@ -21,12 +21,12 @@
 }
 
 .stars::before {
-  content: '';
+  content: "";
   position: absolute;
   width: 2px;
   height: 2px;
   background: #ffffff;
-  box-shadow: 
+  box-shadow:
     50px 50px 0 0 #ffffff,
     100px 200px 0 0 #ffffff,
     150px 100px 0 0 #ffffff,
@@ -130,7 +130,17 @@
 
 .feature-icon {
   font-size: 2rem;
-  animation: bounce 1s ease-in-out infinite;
+  animation: subtle-bounce 3s ease-in-out infinite;
+}
+
+@keyframes subtle-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
 }
 
 .feature:nth-child(1) .feature-icon {
@@ -244,7 +254,8 @@
 /* Animations */
 
 @keyframes twinkle {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.3;
   }
   50% {
@@ -284,7 +295,8 @@
 }
 
 @keyframes gradient-shift {
-  0%, 100% {
+  0%,
+  100% {
     background-position: 0% 50%;
   }
   50% {
@@ -293,7 +305,8 @@
 }
 
 @keyframes bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {

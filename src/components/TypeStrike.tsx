@@ -1,5 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
+import { FaPause, FaPlay, FaRedo, FaHome } from "react-icons/fa";
 import "../styles/game.css";
+
+interface TypeStrikeProps {
+  onHome?: () => void;
+}
 
 interface Mine {
   id: string;
@@ -21,7 +26,7 @@ interface GameState {
   isPaused: boolean;
 }
 
-export const TypeStrike: React.FC = () => {
+export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome }) => {
   const [mines, setMines] = useState<Mine[]>([]);
   const [gameState, setGameState] = useState<GameState>({
     level: 1,
@@ -355,6 +360,37 @@ export const TypeStrike: React.FC = () => {
   // Handle key press for typing
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+
+      // Handle Enter key to trigger modal buttons
+      if (key === "enter") {
+        if (gameState.gameOver) {
+          handleRestart();
+          return;
+        }
+        if (gameState.levelComplete && !gameState.gameWon) {
+          handleStartNextLevel();
+          return;
+        }
+        if (gameState.gameWon) {
+          handleRestart();
+          return;
+        }
+      }
+
+      // Handle Space key to pause/resume game
+      if (key === " ") {
+        if (
+          !gameState.gameOver &&
+          !gameState.levelComplete &&
+          !gameState.gameWon
+        ) {
+          handlePause();
+          e.preventDefault();
+        }
+        return;
+      }
+
       if (
         gameState.gameOver ||
         gameState.levelComplete ||
@@ -362,8 +398,6 @@ export const TypeStrike: React.FC = () => {
         gameState.isPaused
       )
         return;
-
-      const key = e.key.toLowerCase();
 
       // Reset on Escape
       if (key === "escape") {
@@ -511,6 +545,13 @@ export const TypeStrike: React.FC = () => {
   return (
     <div className="game-container">
       <header className="game-header">
+        <button
+          className="home-btn"
+          onClick={onHome}
+          aria-label="Return to home menu"
+        >
+          <FaHome />
+        </button>
         <h1>Type Strike</h1>
         <div className="game-stats">
           <div className="stat">
@@ -557,26 +598,22 @@ export const TypeStrike: React.FC = () => {
         </div>
         <p className="input-hint">
           {gameState.isPaused
-            ? "⏸ GAME PAUSED"
+            ? "GAME PAUSED"
             : targetedMineId
               ? "Type the word to blast the mine!"
               : "Click a mine or start typing to target it"}
         </p>
 
         <div className="game-controls">
-          <button
-            className="control-btn pause-btn"
-            onClick={handlePause}
-            title={gameState.isPaused ? "Resume" : "Pause"}
-          >
-            {gameState.isPaused ? "▶ Resume" : "⏸ Pause"}
+          <button className="control-btn pause-btn" onClick={handlePause}>
+            {gameState.isPaused ? <FaPlay /> : <FaPause />}
+            <span className="button-label">
+              {gameState.isPaused ? "Resume" : "Pause"}
+            </span>
           </button>
-          <button
-            className="control-btn restart-btn"
-            onClick={handleRestart}
-            title="Restart Game"
-          >
-            🔄 Restart
+          <button className="control-btn restart-btn" onClick={handleRestart}>
+            <FaRedo />
+            <span className="button-label">Restart</span>
           </button>
         </div>
       </div>
@@ -617,9 +654,7 @@ export const TypeStrike: React.FC = () => {
           <div className="modal-content">
             <h2>You Won!</h2>
             <p className="final-score">Final Score: {gameState.score}</p>
-            <p className="victory-message">
-              You've completed all 30 levels! 🎉
-            </p>
+            <p className="victory-message">You've completed all 30 levels!</p>
             <button onClick={handleRestart}>Play Again</button>
           </div>
         </div>

@@ -1,17 +1,36 @@
-import React, { useState } from 'react'
-import '../styles/menu.css'
+import React, { useState, useEffect } from "react";
+import {
+  FaBolt,
+  FaChartLine,
+  FaBullseye,
+  FaTrophy,
+  FaPlay,
+} from "react-icons/fa";
+import "../styles/menu.css";
 
 interface StartMenuProps {
-  onStart: () => void
+  onStart: () => void;
 }
 
 export const StartMenu: React.FC<StartMenuProps> = ({ onStart }) => {
-  const [hoveredButton, setHoveredButton] = useState<string | null>(null)
+  const [hoveredButton, setHoveredButton] = useState<string | null>(null);
+
+  // Handle Enter key to start game
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        onStart();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [onStart]);
 
   return (
     <div className="menu-container">
       <div className="stars"></div>
-      
+
       <div className="menu-content">
         <div className="menu-header">
           <h1 className="menu-title">Type Strike</h1>
@@ -19,47 +38,59 @@ export const StartMenu: React.FC<StartMenuProps> = ({ onStart }) => {
         </div>
 
         <div className="menu-description">
-          <p>A fast-paced word destruction game where accuracy is your best weapon.</p>
-          <p>Type the correct spelling to blast incoming mines before they reach your base!</p>
+          <p>
+            A fast-paced word destruction game where accuracy is your best
+            weapon.
+          </p>
+          <p>
+            Type the correct spelling to blast incoming mines before they reach
+            your base!
+          </p>
         </div>
 
         <div className="menu-features">
           <div className="feature">
-            <span className="feature-icon">⚡</span>
+            <FaBolt className="feature-icon" />
             <span className="feature-text">Fast-Paced Action</span>
           </div>
           <div className="feature">
-            <span className="feature-icon">📈</span>
+            <FaChartLine className="feature-icon" />
             <span className="feature-text">Progressive Difficulty</span>
           </div>
           <div className="feature">
-            <span className="feature-icon">🎯</span>
+            <FaBullseye className="feature-icon" />
             <span className="feature-text">Test Your Accuracy</span>
           </div>
           <div className="feature">
-            <span className="feature-icon">🏆</span>
-            <span className="feature-text">4 Challenging Levels</span>
+            <FaTrophy className="feature-icon" />
+            <span className="feature-text">30 Challenging Levels</span>
           </div>
         </div>
 
         <button
-          className={`start-button ${hoveredButton === 'start' ? 'hovered' : ''}`}
+          className={`start-button ${hoveredButton === "start" ? "hovered" : "hovered"}`}
           onClick={onStart}
-          onMouseEnter={() => setHoveredButton('start')}
+          onMouseEnter={() => setHoveredButton("start")}
           onMouseLeave={() => setHoveredButton(null)}
         >
           <span className="button-text">Start Game</span>
-          <span className="button-icon">▶</span>
+          <FaPlay className="button-icon" />
         </button>
 
         <div className="menu-info">
           <div className="info-item">
             <h3>How to Play</h3>
-            <p>Type the words shown on mines to destroy them before they reach the finish line!</p>
+            <p>
+              Type the words shown on mines to destroy them before they reach
+              the finish line!
+            </p>
           </div>
           <div className="info-item">
             <h3>Tips</h3>
-            <p>Focus on accuracy, mines appear one by one, and you can pause anytime during gameplay.</p>
+            <p>
+              Focus on accuracy, mines appear one by one, and you can pause
+              anytime during gameplay.
+            </p>
           </div>
         </div>
       </div>
@@ -68,7 +99,7 @@ export const StartMenu: React.FC<StartMenuProps> = ({ onStart }) => {
         <p>Good luck and sharpen your typing skills!</p>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default StartMenu
+export default StartMenu;

@@ -6,7 +6,7 @@ function App() {
   const [gameStarted, setGameStarted] = useState(false)
 
   return gameStarted ? (
-    <TypeStrike />
+    <TypeStrike onHome={() => setGameStarted(false)} />
   ) : (
     <StartMenu onStart={() => setGameStarted(true)} />
   )
