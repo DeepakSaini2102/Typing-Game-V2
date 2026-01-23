@@ -30,6 +30,9 @@ interface GameState {
 }
 
 export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad }) => {
+  const isDev = Boolean(
+    (import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV,
+  );
   const [mines, setMines] = useState<Mine[]>([]);
   const [gameState, setGameState] = useState<GameState>({
     level: 1,
@@ -46,9 +49,22 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
   const [wordsDestroyed, setWordsDestroyed] = useState(0);
   const [totalAttempts, setTotalAttempts] = useState(0);
   const [countdownTimer, setCountdownTimer] = useState<number | null>(isInitialLoad ? 3 : null);
+  const [devLevelInput, setDevLevelInput] = useState<number>(1);
+  const [arrows, setArrows] = useState<
+    Array<{
+      id: string;
+      mineId: string;
+      startX: number;
+      startY: number;
+      targetX: number;
+      targetY: number;
+      durationMs: number;
+    }>
+  >([]);
   const gameLoopRef = useRef<number | null>(null);
   const gameStartTimeRef = useRef<number>(0);
   const sessionStartTimeRef = useRef<number>(Date.now());
+  const arenaRef = useRef<HTMLDivElement>(null);
 
   // Word bank for different levels
   const wordBanks = [
@@ -644,6 +660,31 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
     );
   };
 
+  const clampLevel = (lvl: number) =>
+    Math.max(1, Math.min(30, Math.floor(Number.isFinite(lvl) ? lvl : 1)));
+
+  const jumpToLevelForDev = (lvl: number) => {
+    const level = clampLevel(lvl);
+    setMines([]);
+    setInput("");
+    setTargetedMineId(null);
+    setErrorMineId(null);
+    setWordsDestroyed(0);
+    setTotalAttempts(0);
+    setArrows([]);
+    setGameState((prev) => ({
+      ...prev,
+      level,
+      score: 0,
+      gameOver: false,
+      levelComplete: false,
+      gameWon: false,
+      isPaused: false,
+    }));
+    sessionStartTimeRef.current = Date.now();
+    setCountdownTimer(1); // quick countdown for dev testing
+  };
+
   // Countdown timer effect
   useEffect(() => {
     if (countdownTimer === null) return;
@@ -893,6 +934,34 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
             setInput(newInput);
             setErrorMineId(null);
 
+            // Fire arrow when typing (fast, keeps up with rapid typing)
+            if (targetedMineId) {
+              const startX = 50; // Center bottom (percentage)
+              const startY = 85; // Near bottom
+              const targetX = targeted.x;
+              const targetY = targeted.y;
+              const durationMs = 220;
+
+              const arrowId = `arrow-${Date.now()}-${Math.random()}`;
+              setArrows((prev) => [
+                ...prev,
+                {
+                  id: arrowId,
+                  mineId: targetedMineId,
+                  startX,
+                  startY,
+                  targetX,
+                  targetY,
+                  durationMs,
+                },
+              ]);
+
+              // Remove arrow after animation
+              setTimeout(() => {
+                setArrows((prev) => prev.filter((a) => a.id !== arrowId));
+              }, durationMs + 40);
+            }
+
             // Check if word is complete
             if (newInput.toLowerCase() === targetWord) {
               // Mine destroyed!
@@ -911,8 +980,19 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
               // Track stats
               setWordsDestroyed((prev) => prev + 1);
               setTotalAttempts((prev) => prev + 1);
-              setInput("");
-              setErrorMineId(null);
+              
+              // Remove all arrows targeting this mine
+              setArrows((prev) => prev.filter((a) => a.mineId !== targetedMineId));
+              
+              // Auto-target next mine
+              setTimeout(() => {
+                const nextMine = getNextTargetMine(mines.filter((m) => m.id !== targetedMineId));
+                if (nextMine) {
+                  setTargetedMineId(nextMine.id);
+                }
+                setInput("");
+                setErrorMineId(null);
+              }, 200);
             }
           } else {
             // Wrong letter - deduct points
@@ -1019,6 +1099,31 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
           <FaHome />
         </button>
         <h1>Type Strike</h1>
+        {isDev && (
+          <div className="dev-controls" aria-label="Developer controls">
+            <span className="dev-label">DEV</span>
+            <label className="dev-level">
+              <span>Level</span>
+              <input
+                type="number"
+                min={1}
+                max={30}
+                value={devLevelInput}
+                onChange={(e) => setDevLevelInput(clampLevel(Number(e.target.value)))}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") jumpToLevelForDev(devLevelInput);
+                }}
+              />
+            </label>
+            <button
+              type="button"
+              className="dev-go"
+              onClick={() => jumpToLevelForDev(devLevelInput)}
+            >
+              Go
+            </button>
+          </div>
+        )}
         <div className="game-stats">
           <div className="stat">
             <span className="stat-label">Level:</span>
@@ -1032,10 +1137,58 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
       </header>
 
       <main className="game-field">
-        <div className="mines-arena">
+        <div className="mines-arena" ref={arenaRef}>
+          {/* Gun/Bow at bottom center */}
+          <div className="gun-container">
+            <div 
+              className="gun"
+              style={{
+                "--gun-angle": targetedMineId 
+                  ? (() => {
+                      const targeted = mines.find((m) => m.id === targetedMineId);
+                      if (!targeted) return "0deg";
+                      const dx = targeted.x - 50;
+                      const dy = targeted.y - 85;
+                      const angle = Math.atan2(dy, dx) * (180 / Math.PI) - 90;
+                      return `${angle}deg`;
+                    })()
+                  : "0deg",
+              } as React.CSSProperties}
+            ></div>
+          </div>
+
+          {/* Arrows/Bullets */}
+          {arrows.map((arrow) => {
+            const targetedMine = mines.find((m) => m.id === arrow.mineId);
+            if (!targetedMine) return null;
+
+            // Calculate angle for arrow rotation
+            const dx = arrow.targetX - arrow.startX;
+            const dy = arrow.targetY - arrow.startY;
+            const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+            return (
+              <div
+                key={arrow.id}
+                className="arrow"
+                style={{
+                  left: `${arrow.startX}%`,
+                  top: `${arrow.startY}%`,
+                  "--target-x": `${arrow.targetX}%`,
+                  "--target-y": `${arrow.targetY}%`,
+                  "--angle": `${angle}deg`,
+                  "--arrow-dur": `${arrow.durationMs}ms`,
+                } as React.CSSProperties}
+              >
+                <div className="arrow-body"></div>
+              </div>
+            );
+          })}
+
           {mines.map((mine) => (
             <div
               key={mine.id}
+              data-mine-id={mine.id}
               className={`mine ${mine.isDestroyed ? "destroyed" : ""} ${
                 targetedMineId === mine.id ? "targeted" : ""
               } ${errorMineId === mine.id ? "error" : ""} ${
@@ -1045,11 +1198,20 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
                 left: `${mine.x}%`,
                 top: `${mine.y}%`,
               }}
-              onClick={() => handleMineClick(mine.id)}
             >
               <div className={`mine-body ${mine.colorClass}`}>
                 <span className="mine-word">{mine.word}</span>
               </div>
+              {mine.isDestroyed && (
+                <div className="explosion">
+                  <div className="explosion-particle"></div>
+                  <div className="explosion-particle"></div>
+                  <div className="explosion-particle"></div>
+                  <div className="explosion-particle"></div>
+                  <div className="explosion-particle"></div>
+                  <div className="explosion-particle"></div>
+                </div>
+              )}
             </div>
           ))}
 

@@ -639,6 +639,241 @@
   }
 }
 
+/* Gun/Bow Container */
+.gun-container {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  pointer-events: none;
+}
+
+.gun {
+  width: 60px;
+  height: 40px;
+  background: linear-gradient(135deg, #8b4513, #654321);
+  border-radius: 8px 8px 0 0;
+  position: relative;
+  box-shadow: 0 0 15px rgba(139, 69, 19, 0.6);
+  transform: rotate(var(--gun-angle, 0deg));
+  transform-origin: center bottom;
+  transition: transform 0.2s ease-out;
+}
+
+.gun::before {
+  content: "";
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 15px solid #654321;
+}
+
+.gun::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  right: -20px;
+  width: 20px;
+  height: 4px;
+  background: linear-gradient(90deg, #8b4513, #a0522d);
+  border-radius: 2px;
+  box-shadow: 0 0 5px rgba(255, 200, 0, 0.5);
+}
+
+/* Arrow/Bullet */
+.arrow {
+  position: absolute;
+  transform: translate(-50%, -50%) rotate(var(--angle, 0deg));
+  z-index: 100;
+  pointer-events: none;
+  animation: arrow-fly var(--arrow-dur, 220ms) linear forwards;
+}
+
+.arrow-body {
+  width: 30px;
+  height: 4px;
+  background: linear-gradient(90deg, #ffd700, #ffaa00);
+  border-radius: 2px;
+  position: relative;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+  transform-origin: center;
+}
+
+.arrow-body::before {
+  content: "";
+  position: absolute;
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid #ffaa00;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+}
+
+.arrow-body::after {
+  content: "";
+  position: absolute;
+  left: -2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  background: radial-gradient(circle, #fff, #ffd700);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+}
+
+@keyframes arrow-fly {
+  0% {
+    left: var(--start-x, 50%);
+    top: var(--start-y, 85%);
+    opacity: 1;
+  }
+  100% {
+    left: var(--target-x, 50%);
+    top: var(--target-y, 50%);
+    opacity: 0.8;
+  }
+}
+
+/* Explosion Animation */
+.explosion {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;
+  height: 100px;
+  pointer-events: none;
+  z-index: 200;
+}
+
+.explosion-particle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(circle, #ffd700, #ff6b6b);
+  border-radius: 50%;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.9);
+  animation: explode-particle 0.6s ease-out forwards;
+}
+
+
+@keyframes explode-particle {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--x, 0), var(--y, 0)) scale(0);
+    opacity: 0;
+  }
+}
+
+.explosion-particle:nth-child(1) {
+  animation-delay: 0s;
+  --x: 60px;
+  --y: 0px;
+}
+
+.explosion-particle:nth-child(2) {
+  animation-delay: 0.05s;
+  --x: 30px;
+  --y: -52px;
+}
+
+.explosion-particle:nth-child(3) {
+  animation-delay: 0.1s;
+  --x: -30px;
+  --y: -52px;
+}
+
+.explosion-particle:nth-child(4) {
+  animation-delay: 0.15s;
+  --x: -60px;
+  --y: 0px;
+}
+
+.explosion-particle:nth-child(5) {
+  animation-delay: 0.2s;
+  --x: -30px;
+  --y: 52px;
+}
+
+.explosion-particle:nth-child(6) {
+  animation-delay: 0.25s;
+  --x: 30px;
+  --y: 52px;
+}
+
+/* Enhanced mine explosion */
+.mine.destroyed .mine-body {
+  animation: explode 0.6s ease-out forwards;
+}
+
+/* DEV controls (only shown in development build) */
+.dev-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border: 1px solid rgba(0, 212, 255, 0.35);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.dev-label {
+  font-weight: 800;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  color: #ffd700;
+}
+
+.dev-level {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #a8dadc;
+  font-size: 0.85rem;
+}
+
+.dev-level input {
+  width: 64px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 212, 255, 0.4);
+  background: rgba(15, 52, 96, 0.35);
+  color: #ffffff;
+  outline: none;
+}
+
+.dev-level input:focus {
+  border-color: rgba(0, 212, 255, 0.85);
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
+}
+
+.dev-go {
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 212, 255, 0.55);
+  background: linear-gradient(135deg, #00d4ff, #0099cc);
+  color: #ffffff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.dev-go:active {
+  transform: scale(0.98);
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;
