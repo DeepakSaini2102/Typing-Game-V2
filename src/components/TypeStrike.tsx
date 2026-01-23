@@ -29,7 +29,10 @@ interface GameState {
   isPaused: boolean;
 }
 
-export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad }) => {
+export const TypeStrike: React.FC<TypeStrikeProps> = ({
+  onHome,
+  isInitialLoad,
+}) => {
   const isDev = Boolean(
     (import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV,
   );
@@ -48,7 +51,9 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
   const [errorMineId, setErrorMineId] = useState<string | null>(null);
   const [wordsDestroyed, setWordsDestroyed] = useState(0);
   const [totalAttempts, setTotalAttempts] = useState(0);
-  const [countdownTimer, setCountdownTimer] = useState<number | null>(isInitialLoad ? 3 : null);
+  const [countdownTimer, setCountdownTimer] = useState<number | null>(
+    isInitialLoad ? 3 : null,
+  );
   const [devLevelInput, setDevLevelInput] = useState<number>(1);
   const [arrows, setArrows] = useState<
     Array<{
@@ -62,6 +67,7 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
     }>
   >([]);
   const gameLoopRef = useRef<number | null>(null);
+  const lastCompletedLevelRef = useRef<number>(0);
   const gameStartTimeRef = useRef<number>(0);
   const sessionStartTimeRef = useRef<number>(Date.now());
   const arenaRef = useRef<HTMLDivElement>(null);
@@ -672,6 +678,7 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
     setWordsDestroyed(0);
     setTotalAttempts(0);
     setArrows([]);
+    lastCompletedLevelRef.current = 0;
     setGameState((prev) => ({
       ...prev,
       level,
@@ -807,9 +814,9 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
             ...mine,
             hasStarted: shouldStart || mine.hasStarted,
             y:
-              shouldStart || mine.hasStarted
-                ? mine.y + currentWordBank.speed
-                : mine.y,
+              shouldStart || mine.hasStarted ?
+                mine.y + currentWordBank.speed
+              : mine.y,
           };
         });
 
@@ -826,19 +833,43 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
           (m) => m.y < finishLineY && !m.isDestroyed,
         );
 
-        // Check if wave is complete
+        // Check if wave is complete (only if not already in level complete state)
         if (
           remaining.length === 0 &&
-          updated.some((m) => m.y >= finishLineY || m.isDestroyed)
+          updated.some((m) => m.y >= finishLineY || m.isDestroyed) &&
+          !gameState.levelComplete &&
+          lastCompletedLevelRef.current !== gameState.level
         ) {
+          const currentLevel = gameState.level;
+          lastCompletedLevelRef.current = currentLevel;
+
           setGameState((prev) => {
             const nextLevel = prev.level + 1;
+            const isGameWon = nextLevel > 30;
             return {
               ...prev,
-              levelComplete: true,
-              gameWon: nextLevel > 30,
+              level: isGameWon ? prev.level : nextLevel,
+              levelComplete: !isGameWon,
+              gameWon: isGameWon,
             };
           });
+
+          // Auto-start next level after a delay (only if not game won)
+          setTimeout(() => {
+            setGameState((prev) => {
+              if (prev.level <= 30) {
+                setMines([]);
+                setInput("");
+                setTargetedMineId(null);
+                setErrorMineId(null);
+                setCountdownTimer(2); // Quick countdown for auto-level progression
+              }
+              return {
+                ...prev,
+                levelComplete: false,
+              };
+            });
+          }, 2000); // 2 second delay to show completion message
         }
 
         return remaining;
@@ -933,7 +964,8 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
           // Check if the character matches at the current position
           const currentPosition = input.length;
           const expectedChar = targetWord[currentPosition];
-          const isCorrect = expectedChar && key.toLowerCase() === expectedChar.toLowerCase();
+          const isCorrect =
+            expectedChar && key.toLowerCase() === expectedChar.toLowerCase();
 
           if (isCorrect) {
             setInput(newInput);
@@ -987,11 +1019,15 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
               setTotalAttempts((prev) => prev + 1);
 
               // Remove all arrows targeting this mine
-              setArrows((prev) => prev.filter((a) => a.mineId !== targetedMineId));
+              setArrows((prev) =>
+                prev.filter((a) => a.mineId !== targetedMineId),
+              );
 
               // Auto-target next mine
               setTimeout(() => {
-                const nextMine = getNextTargetMine(mines.filter((m) => m.id !== targetedMineId));
+                const nextMine = getNextTargetMine(
+                  mines.filter((m) => m.id !== targetedMineId),
+                );
                 if (nextMine) {
                   setTargetedMineId(nextMine.id);
                 }
@@ -1052,14 +1088,13 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
   const handleStartNextLevel = () => {
     setMines([]);
     setGameState((prev) => {
-      const nextLevel = prev.level + 1;
+      // Level is already incremented in the game loop when completion was detected
       return {
         ...prev,
-        level: nextLevel > 30 ? 30 : nextLevel,
         levelComplete: false,
-        gameWon: nextLevel > 30,
       };
     });
+    lastCompletedLevelRef.current = 0;
     setInput("");
     setTargetedMineId(null);
     setErrorMineId(null);
@@ -1069,9 +1104,20 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
   const handleRestart = () => {
     // Record stats before restarting
     if (wordsDestroyed > 0 || totalAttempts > 0) {
-      const accuracy = totalAttempts > 0 ? Math.round((wordsDestroyed / totalAttempts) * 100) : 0;
-      const timePlayedSeconds = Math.floor((Date.now() - sessionStartTimeRef.current) / 1000);
-      StatsManager.recordGameEnd(gameState.score, gameState.level, accuracy, wordsDestroyed, timePlayedSeconds);
+      const accuracy =
+        totalAttempts > 0 ?
+          Math.round((wordsDestroyed / totalAttempts) * 100)
+        : 0;
+      const timePlayedSeconds = Math.floor(
+        (Date.now() - sessionStartTimeRef.current) / 1000,
+      );
+      StatsManager.recordGameEnd(
+        gameState.score,
+        gameState.level,
+        accuracy,
+        wordsDestroyed,
+        timePlayedSeconds,
+      );
     }
 
     setMines([]);
@@ -1089,6 +1135,7 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
     setErrorMineId(null);
     setWordsDestroyed(0);
     setTotalAttempts(0);
+    lastCompletedLevelRef.current = 0;
     setCountdownTimer(3);
     sessionStartTimeRef.current = Date.now();
   };
@@ -1114,7 +1161,9 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
                 min={1}
                 max={30}
                 value={devLevelInput}
-                onChange={(e) => setDevLevelInput(clampLevel(Number(e.target.value)))}
+                onChange={(e) =>
+                  setDevLevelInput(clampLevel(Number(e.target.value)))
+                }
                 onKeyDown={(e) => {
                   if (e.key === "Enter") jumpToLevelForDev(devLevelInput);
                 }}
@@ -1145,20 +1194,25 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
         <div className="mines-arena" ref={arenaRef}>
           {/* Gun/Bow at bottom center */}
           <div className="gun-container">
-            <div 
+            <div
               className="gun"
-              style={{
-                "--gun-angle": targetedMineId 
-                  ? (() => {
-                      const targeted = mines.find((m) => m.id === targetedMineId);
-                      if (!targeted) return "0deg";
-                      const dx = targeted.x - 50;
-                      const dy = targeted.y - 85;
-                      const angle = Math.atan2(dy, dx) * (180 / Math.PI) - 90;
-                      return `${angle}deg`;
-                    })()
-                  : "0deg",
-              } as React.CSSProperties}
+              style={
+                {
+                  "--gun-angle":
+                    targetedMineId ?
+                      (() => {
+                        const targeted = mines.find(
+                          (m) => m.id === targetedMineId,
+                        );
+                        if (!targeted) return "0deg";
+                        const dx = targeted.x - 50;
+                        const dy = targeted.y - 85;
+                        const angle = Math.atan2(dy, dx) * (180 / Math.PI) - 90;
+                        return `${angle}deg`;
+                      })()
+                    : "0deg",
+                } as React.CSSProperties
+              }
             ></div>
           </div>
 
@@ -1171,13 +1225,15 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
               <div
                 key={arrow.id}
                 className="arrow"
-                style={{
-                  left: `${arrow.startX}%`,
-                  top: `${arrow.startY}%`,
-                  "--target-x": `${arrow.targetX}%`,
-                  "--target-y": `${arrow.targetY}%`,
-                  "--arrow-dur": `${arrow.durationMs}ms`,
-                } as React.CSSProperties}
+                style={
+                  {
+                    left: `${arrow.startX}%`,
+                    top: `${arrow.startY}%`,
+                    "--target-x": `${arrow.targetX}%`,
+                    "--target-y": `${arrow.targetY}%`,
+                    "--arrow-dur": `${arrow.durationMs}ms`,
+                  } as React.CSSProperties
+                }
               >
                 <div className="arrow-body"></div>
               </div>
@@ -1225,19 +1281,19 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
                     <span className="remaining-part">{remainingPart}</span>
                   </span>
                 </div>
-              {mine.isDestroyed && (
-                <div className="explosion">
-                  <div className="explosion-particle"></div>
-                  <div className="explosion-particle"></div>
-                  <div className="explosion-particle"></div>
-                  <div className="explosion-particle"></div>
-                  <div className="explosion-particle"></div>
-                  <div className="explosion-particle"></div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+                {mine.isDestroyed && (
+                  <div className="explosion">
+                    <div className="explosion-particle"></div>
+                    <div className="explosion-particle"></div>
+                    <div className="explosion-particle"></div>
+                    <div className="explosion-particle"></div>
+                    <div className="explosion-particle"></div>
+                    <div className="explosion-particle"></div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
           <div className="finish-line"></div>
         </div>
@@ -1250,16 +1306,18 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
           </p>
         </div>
         <p className="input-hint">
-          {gameState.isPaused
-            ? "GAME PAUSED"
-            : targetedMineId
-              ? "Type the word shown in the highlighted mine! Use backspace to correct mistakes."
-              : "Get ready to type the next word in order"}
+          {gameState.isPaused ?
+            "GAME PAUSED"
+          : targetedMineId ?
+            "Type the word shown in the highlighted mine! Use backspace to correct mistakes."
+          : "Get ready to type the next word in order"}
         </p>
 
         <div className="game-controls">
           <button className="control-btn pause-btn" onClick={handlePause}>
-            {gameState.isPaused ? <FaPlay /> : <FaPause />}
+            {gameState.isPaused ?
+              <FaPlay />
+            : <FaPause />}
             <span className="button-label">
               {gameState.isPaused ? "Resume" : "Pause"}
             </span>
@@ -1287,7 +1345,7 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
         </div>
       )}
 
-      {gameState.levelComplete && !gameState.gameWon && (
+      {gameState.levelComplete && !gameState.gameWon && !gameState.gameOver && (
         <div className="modal level-complete">
           <div className="modal-content">
             <div className="level-animation">
@@ -1295,9 +1353,7 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
               <div className="celebration"></div>
             </div>
             <p className="level-score">Score: {gameState.score}</p>
-            <button onClick={handleStartNextLevel}>
-              Start Level {gameState.level + 1}
-            </button>
+            <p>Auto-advancing to next level...</p>
           </div>
         </div>
       )}
