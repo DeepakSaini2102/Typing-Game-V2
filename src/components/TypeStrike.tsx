@@ -930,11 +930,16 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
           const newInput = input + key;
           const targetWord = targeted.word.toLowerCase();
 
-          if (targetWord.startsWith(newInput.toLowerCase())) {
+          // Check if the character matches at the current position
+          const currentPosition = input.length;
+          const expectedChar = targetWord[currentPosition];
+          const isCorrect = expectedChar && key.toLowerCase() === expectedChar.toLowerCase();
+
+          if (isCorrect) {
             setInput(newInput);
             setErrorMineId(null);
 
-            // Fire arrow when typing (fast, keeps up with rapid typing)
+            // Fire arrow when typing correctly (fast, keeps up with rapid typing)
             if (targetedMineId) {
               const startX = 50; // Center bottom (percentage)
               const startY = 85; // Near bottom
@@ -980,10 +985,10 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
               // Track stats
               setWordsDestroyed((prev) => prev + 1);
               setTotalAttempts((prev) => prev + 1);
-              
+
               // Remove all arrows targeting this mine
               setArrows((prev) => prev.filter((a) => a.mineId !== targetedMineId));
-              
+
               // Auto-target next mine
               setTimeout(() => {
                 const nextMine = getNextTargetMine(mines.filter((m) => m.id !== targetedMineId));
@@ -995,13 +1000,13 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
               }, 200);
             }
           } else {
-            // Wrong letter - deduct points
+            // Wrong letter - add it to input but mark as error, deduct points
+            setInput(newInput);
+            setErrorMineId(targetedMineId);
             setGameState((prev) => ({
               ...prev,
               score: Math.max(0, prev.score - 5),
             }));
-            setInput("");
-            setErrorMineId(targetedMineId);
             setTotalAttempts((prev) => prev + 1);
           }
         }
@@ -1185,23 +1190,47 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
             );
           })}
 
-          {mines.map((mine) => (
-            <div
-              key={mine.id}
-              data-mine-id={mine.id}
-              className={`mine ${mine.isDestroyed ? "destroyed" : ""} ${
-                targetedMineId === mine.id ? "targeted" : ""
-              } ${errorMineId === mine.id ? "error" : ""} ${
-                !mine.hasStarted ? "waiting" : ""
-              }`}
-              style={{
-                left: `${mine.x}%`,
-                top: `${mine.y}%`,
-              }}
-            >
-              <div className={`mine-body ${mine.colorClass}`}>
-                <span className="mine-word">{mine.word}</span>
-              </div>
+          {mines.map((mine) => {
+            const isTargeted = targetedMineId === mine.id;
+            const typedLength = isTargeted ? input.length : 0;
+            const word = mine.word.toLowerCase();
+            const typed = input.toLowerCase();
+
+            // Find the correct part (characters that match)
+            let correctLength = 0;
+            for (let i = 0; i < Math.min(typed.length, word.length); i++) {
+              if (typed[i] === word[i]) {
+                correctLength++;
+              } else {
+                break;
+              }
+            }
+
+            const correctPart = mine.word.slice(0, correctLength);
+            const wrongPart = mine.word.slice(correctLength, typedLength);
+            const remainingPart = mine.word.slice(typedLength);
+
+            return (
+              <div
+                key={mine.id}
+                data-mine-id={mine.id}
+                className={`mine ${mine.isDestroyed ? "destroyed" : ""} ${
+                  targetedMineId === mine.id ? "targeted" : ""
+                } ${errorMineId === mine.id ? "error" : ""} ${
+                  !mine.hasStarted ? "waiting" : ""
+                }`}
+                style={{
+                  left: `${mine.x}%`,
+                  top: `${mine.y}%`,
+                }}
+              >
+                <div className={`mine-body ${mine.colorClass}`}>
+                  <span className="mine-word">
+                    <span className="typed-part">{correctPart}</span>
+                    <span className="wrong-part">{wrongPart}</span>
+                    <span className="remaining-part">{remainingPart}</span>
+                  </span>
+                </div>
               {mine.isDestroyed && (
                 <div className="explosion">
                   <div className="explosion-particle"></div>
@@ -1213,7 +1242,8 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
                 </div>
               )}
             </div>
-          ))}
+          );
+        })}
 
           <div className="finish-line"></div>
         </div>
@@ -1221,16 +1251,15 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
 
       <div className="game-input-section">
         <div className="input-display">
-          {/* <p className="target-word">
+          <p className="target-word">
             {targetedMineId && mines.find((m) => m.id === targetedMineId)?.word}
-          </p> */}
-          <p className="typed-text">{input}</p>
+          </p>
         </div>
         <p className="input-hint">
           {gameState.isPaused
             ? "GAME PAUSED"
             : targetedMineId
-              ? "Type the highlighted word to blast the mine!"
+              ? "Type the word shown in the highlighted mine! Use backspace to correct mistakes."
               : "Get ready to type the next word in order"}
         </p>
 

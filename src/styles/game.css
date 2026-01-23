@@ -185,6 +185,23 @@
   line-height: 1.1;
 }
 
+.typed-part {
+  color: #00d4ff;
+  text-shadow: 0 0 8px rgba(0, 212, 255, 0.8);
+  font-weight: bold;
+}
+
+.wrong-part {
+  color: #ff1744;
+  text-shadow: 0 0 8px rgba(255, 23, 68, 0.8);
+  font-weight: bold;
+}
+
+.remaining-part {
+  color: #ffffff;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+}
+
 .mine:hover:not(.destroyed) .mine-body {
   transform: scale(1.1);
   box-shadow:
@@ -251,6 +268,7 @@
   margin-bottom: 8px;
   min-height: 30px;
   letter-spacing: 1px;
+  text-shadow: 0 0 5px rgba(0, 212, 255, 0.5);
 }
 
 .typed-text {
