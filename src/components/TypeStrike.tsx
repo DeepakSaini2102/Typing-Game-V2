@@ -727,16 +727,22 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({
     countdownTimer,
   ]);
 
-  // Spawn wave of mines - all at once, with random positions
+  // Spawn wave of mines - all at once, with unique words and random positions
   const spawnWave = () => {
     const newMines: Mine[] = [];
     const usedPositions = new Set<number>();
+    
+    // Create a shuffled copy of words to ensure uniqueness
+    // If we need more mines than available words, we'll need to reuse some (shuffled again)
+    let availableWords = [...currentWordBank.words].sort(() => Math.random() - 0.5);
+    
+    // Ensure we have enough words by duplicating if necessary
+    while (availableWords.length < currentWordBank.minesCount) {
+      availableWords = [...availableWords, ...[...currentWordBank.words].sort(() => Math.random() - 0.5)];
+    }
 
     for (let i = 0; i < currentWordBank.minesCount; i++) {
-      const randomWord =
-        currentWordBank.words[
-          Math.floor(Math.random() * currentWordBank.words.length)
-        ];
+      const word = availableWords[i];
 
       // Get random X position (10-90% to avoid edges)
       let randomX: number;
@@ -751,7 +757,7 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({
 
       newMines.push({
         id: `mine-${i}-${Date.now()}`,
-        word: randomWord,
+        word: word,
         x: randomX,
         y: 0,
         isDestroyed: false,
@@ -766,6 +772,13 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({
     setInput("");
     gameStartTimeRef.current = Date.now(); // Reset start time for each wave
   };
+
+  // Sync dev level input with current level (so if we auto-advance, the input updates)
+  useEffect(() => {
+    if (isDev) {
+      setDevLevelInput(gameState.level);
+    }
+  }, [gameState.level, isDev]);
 
   // Keep targeted mine in correct order (one active word at a time)
   useEffect(() => {
