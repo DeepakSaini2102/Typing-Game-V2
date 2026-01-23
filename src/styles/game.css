@@ -121,6 +121,47 @@
   position: relative;
 }
 
+/* Color themes for mines – all with good contrast for white text */
+.mine-body.mine-red {
+  background: radial-gradient(circle at 30% 30%, #ff6b6b, #cc0000);
+  border-color: #ff3333;
+  box-shadow:
+    0 0 15px rgba(255, 107, 107, 0.7),
+    inset 0 0 10px rgba(0, 0, 0, 0.4);
+}
+
+.mine-body.mine-blue {
+  background: radial-gradient(circle at 30% 30%, #00d4ff, #0066ff);
+  border-color: #00aaff;
+  box-shadow:
+    0 0 15px rgba(0, 212, 255, 0.7),
+    inset 0 0 10px rgba(0, 0, 0, 0.4);
+}
+
+.mine-body.mine-green {
+  background: radial-gradient(circle at 30% 30%, #1abc9c, #0b7c5c);
+  border-color: #1abc9c;
+  box-shadow:
+    0 0 15px rgba(26, 188, 156, 0.7),
+    inset 0 0 10px rgba(0, 0, 0, 0.4);
+}
+
+.mine-body.mine-purple {
+  background: radial-gradient(circle at 30% 30%, #c471ed, #6a1b9a);
+  border-color: #ba68c8;
+  box-shadow:
+    0 0 15px rgba(196, 113, 237, 0.7),
+    inset 0 0 10px rgba(0, 0, 0, 0.4);
+}
+
+.mine-body.mine-orange {
+  background: radial-gradient(circle at 30% 30%, #ffb74d, #f57c00);
+  border-color: #ffa726;
+  box-shadow:
+    0 0 15px rgba(255, 183, 77, 0.7),
+    inset 0 0 10px rgba(0, 0, 0, 0.4);
+}
+
 .mine-body::before {
   content: "";
   position: absolute;
