@@ -668,97 +668,96 @@
 }
 
 .gun {
-  width: 60px;
-  height: 40px;
-  background: linear-gradient(135deg, #8b4513, #654321);
-  border-radius: 8px 8px 0 0;
+  width: 50px;
+  height: 35px;
+  background: linear-gradient(135deg, #2c3e50, #34495e);
+  border-radius: 12px;
   position: relative;
-  box-shadow: 0 0 15px rgba(139, 69, 19, 0.6);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
   transform: rotate(var(--gun-angle, 0deg));
   transform-origin: center bottom;
   transition: transform 0.2s ease-out;
+  border: 2px solid #00d4ff;
 }
 
 .gun::before {
   content: "";
   position: absolute;
-  top: -15px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-bottom: 15px solid #654321;
+  top: 8px;
+  left: 8px;
+  width: 8px;
+  height: 8px;
+  background: radial-gradient(circle, #ffffff, #00d4ff);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.9);
 }
 
 .gun::after {
   content: "";
   position: absolute;
-  top: 10px;
-  right: -20px;
-  width: 20px;
-  height: 4px;
-  background: linear-gradient(90deg, #8b4513, #a0522d);
-  border-radius: 2px;
-  box-shadow: 0 0 5px rgba(255, 200, 0, 0.5);
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 25px;
+  height: 12px;
+  background: linear-gradient(180deg, #34495e, #2c3e50);
+  border-radius: 0 0 8px 8px;
+  border: 1px solid #00d4ff;
+  border-top: none;
 }
 
-/* Arrow/Bullet */
+/* Energy Bullet/Circle */
 .arrow {
   position: absolute;
-  transform: translate(-50%, -50%) rotate(var(--angle, 0deg));
   z-index: 100;
   pointer-events: none;
-  animation: arrow-fly var(--arrow-dur, 220ms) linear forwards;
+  animation: bullet-fly var(--arrow-dur, 220ms) linear forwards;
+  transform: translate(-50%, -50%);
 }
 
 .arrow-body {
-  width: 30px;
-  height: 4px;
-  background: linear-gradient(90deg, #ffd700, #ffaa00);
-  border-radius: 2px;
+  width: 20px;
+  height: 20px;
+  background: radial-gradient(circle, #00d4ff, #0099cc, #0066aa);
+  border-radius: 50%;
   position: relative;
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+  box-shadow:
+    0 0 15px rgba(0, 212, 255, 0.9),
+    0 0 30px rgba(0, 212, 255, 0.6),
+    inset 0 0 10px rgba(255, 255, 255, 0.3);
   transform-origin: center;
+  border: 2px solid #ffffff;
 }
 
 .arrow-body::before {
   content: "";
   position: absolute;
-  right: -8px;
   top: 50%;
-  transform: translateY(-50%);
-  width: 0;
-  height: 0;
-  border-left: 8px solid #ffaa00;
-  border-top: 4px solid transparent;
-  border-bottom: 4px solid transparent;
-}
-
-.arrow-body::after {
-  content: "";
-  position: absolute;
-  left: -2px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 6px;
-  height: 6px;
-  background: radial-gradient(circle, #fff, #ffd700);
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  background: radial-gradient(circle, #ffffff, #00d4ff);
   border-radius: 50%;
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
 }
 
-@keyframes arrow-fly {
+@keyframes bullet-fly {
   0% {
     left: var(--start-x, 50%);
     top: var(--start-y, 85%);
     opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
   }
   100% {
     left: var(--target-x, 50%);
     top: var(--target-y, 50%);
-    opacity: 0.8;
+    opacity: 0;
+    transform: scale(0.8);
   }
 }
 

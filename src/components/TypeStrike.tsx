@@ -1162,15 +1162,10 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
             ></div>
           </div>
 
-          {/* Arrows/Bullets */}
+          {/* Energy Bullets */}
           {arrows.map((arrow) => {
             const targetedMine = mines.find((m) => m.id === arrow.mineId);
             if (!targetedMine) return null;
-
-            // Calculate angle for arrow rotation
-            const dx = arrow.targetX - arrow.startX;
-            const dy = arrow.targetY - arrow.startY;
-            const angle = Math.atan2(dy, dx) * (180 / Math.PI);
 
             return (
               <div
@@ -1181,7 +1176,6 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
                   top: `${arrow.startY}%`,
                   "--target-x": `${arrow.targetX}%`,
                   "--target-y": `${arrow.targetY}%`,
-                  "--angle": `${angle}deg`,
                   "--arrow-dur": `${arrow.durationMs}ms`,
                 } as React.CSSProperties}
               >
