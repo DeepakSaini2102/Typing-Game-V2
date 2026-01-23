@@ -42,6 +42,7 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
   });
   const [input, setInput] = useState("");
   const [targetedMineId, setTargetedMineId] = useState<string | null>(null);
+  const [errorMineId, setErrorMineId] = useState<string | null>(null);
   const [wordsDestroyed, setWordsDestroyed] = useState(0);
   const [totalAttempts, setTotalAttempts] = useState(0);
   const [countdownTimer, setCountdownTimer] = useState<number | null>(isInitialLoad ? 3 : null);
@@ -634,6 +635,15 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
     "mine-orange",
   ];
 
+  const getNextTargetMine = (minesList: Mine[]): Mine | undefined => {
+    const alive = minesList.filter((m) => !m.isDestroyed);
+    if (alive.length === 0) return undefined;
+    // Always target the mine that was scheduled to start first (smallest delay)
+    return alive.reduce((prev, curr) =>
+      curr.delayMs < prev.delayMs ? curr : prev,
+    );
+  };
+
   // Countdown timer effect
   useEffect(() => {
     if (countdownTimer === null) return;
@@ -704,9 +714,33 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
     }
     setMines(newMines);
     setTargetedMineId(null);
+    setErrorMineId(null);
     setInput("");
     gameStartTimeRef.current = Date.now(); // Reset start time for each wave
   };
+
+  // Keep targeted mine in correct order (one active word at a time)
+  useEffect(() => {
+    if (mines.length === 0) {
+      setTargetedMineId(null);
+      setErrorMineId(null);
+      setInput("");
+      return;
+    }
+
+    const currentTargetAlive = mines.some(
+      (m) => m.id === targetedMineId && !m.isDestroyed,
+    );
+
+    if (!currentTargetAlive) {
+      const next = getNextTargetMine(mines);
+      if (next) {
+        setTargetedMineId(next.id);
+        setErrorMineId(null);
+        setInput("");
+      }
+    }
+  }, [mines, targetedMineId]);
 
   // Game loop - move mines down
   useEffect(() => {
@@ -826,7 +860,7 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
       // Reset on Escape
       if (key === "escape") {
         setInput("");
-        setTargetedMineId(null);
+        setErrorMineId(null);
         return;
       }
 
@@ -840,18 +874,13 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
       if (/^[a-z]$/.test(key)) {
         e.preventDefault();
 
-        // If no mine targeted, target the first matching mine
+        // Ensure we always have a target (in the correct order)
         if (!targetedMineId) {
-          const matchingMine = mines.find(
-            (m) =>
-              !m.isDestroyed &&
-              m.word.toLowerCase().startsWith((input + key).toLowerCase()),
-          );
-          if (matchingMine) {
-            setTargetedMineId(matchingMine.id);
-            setInput((prev) => prev + key);
-          }
-          return;
+          const next = getNextTargetMine(mines);
+          if (!next) return;
+          setTargetedMineId(next.id);
+          setErrorMineId(null);
+          setInput("");
         }
 
         // Check if input matches targeted mine
@@ -862,6 +891,7 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
 
           if (targetWord.startsWith(newInput.toLowerCase())) {
             setInput(newInput);
+            setErrorMineId(null);
 
             // Check if word is complete
             if (newInput.toLowerCase() === targetWord) {
@@ -881,17 +911,8 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
               // Track stats
               setWordsDestroyed((prev) => prev + 1);
               setTotalAttempts((prev) => prev + 1);
-
-              // Auto-target next mine
-              setTimeout(() => {
-                const nextMine = mines.find(
-                  (m) => m.id !== targetedMineId && !m.isDestroyed,
-                );
-                if (nextMine) {
-                  setTargetedMineId(nextMine.id);
-                }
-                setInput("");
-              }, 200);
+              setInput("");
+              setErrorMineId(null);
             }
           } else {
             // Wrong letter - deduct points
@@ -900,7 +921,7 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
               score: Math.max(0, prev.score - 5),
             }));
             setInput("");
-            setTargetedMineId(null);
+            setErrorMineId(targetedMineId);
             setTotalAttempts((prev) => prev + 1);
           }
         }
@@ -928,13 +949,8 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
     )
       return;
 
-    const mine = mines.find((m) => m.id === mineId);
-    if (!mine || mine.isDestroyed) return;
-
-    if (!targetedMineId) {
-      setTargetedMineId(mineId);
-      setInput("");
-    }
+    // Clicking mines is disabled to enforce strict typing order
+    return;
   };
 
   const handlePause = () => {
@@ -961,6 +977,7 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
     });
     setInput("");
     setTargetedMineId(null);
+    setErrorMineId(null);
     setCountdownTimer(3);
   };
 
@@ -984,6 +1001,7 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
     });
     setInput("");
     setTargetedMineId(null);
+    setErrorMineId(null);
     setWordsDestroyed(0);
     setTotalAttempts(0);
     setCountdownTimer(3);
@@ -1020,7 +1038,9 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
               key={mine.id}
               className={`mine ${mine.isDestroyed ? "destroyed" : ""} ${
                 targetedMineId === mine.id ? "targeted" : ""
-              } ${!mine.hasStarted ? "waiting" : ""}`}
+              } ${errorMineId === mine.id ? "error" : ""} ${
+                !mine.hasStarted ? "waiting" : ""
+              }`}
               style={{
                 left: `${mine.x}%`,
                 top: `${mine.y}%`,
@@ -1039,17 +1059,17 @@ export const TypeStrike: React.FC<TypeStrikeProps> = ({ onHome, isInitialLoad })
 
       <div className="game-input-section">
         <div className="input-display">
-          <p className="target-word">
+          {/* <p className="target-word">
             {targetedMineId && mines.find((m) => m.id === targetedMineId)?.word}
-          </p>
+          </p> */}
           <p className="typed-text">{input}</p>
         </div>
         <p className="input-hint">
           {gameState.isPaused
             ? "GAME PAUSED"
             : targetedMineId
-              ? "Type the word to blast the mine!"
-              : "Click a mine or start typing to target it"}
+              ? "Type the highlighted word to blast the mine!"
+              : "Get ready to type the next word in order"}
         </p>
 
         <div className="game-controls">

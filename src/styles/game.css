@@ -201,6 +201,15 @@
   background: radial-gradient(circle at 30% 30%, #00d4ff, #0099cc);
 }
 
+.mine.error .mine-body {
+  animation: mine-error-shake 0.35s ease;
+  background: radial-gradient(circle at 30% 30%, #ff1744, #b00020);
+  border-color: #ff5252;
+  box-shadow:
+    0 0 22px rgba(255, 23, 68, 0.9),
+    inset 0 0 12px rgba(0, 0, 0, 0.4);
+}
+
 .mine.destroyed {
   animation: explode 0.6s ease-out forwards;
   pointer-events: none;
@@ -594,6 +603,21 @@
       0 0 35px rgba(0, 212, 255, 1),
       inset 0 0 10px rgba(0, 0, 0, 0.3);
     transform: scale(1.08);
+  }
+}
+
+@keyframes mine-error-shake {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translateX(0);
+  }
+  20%,
+  60% {
+    transform: translate(-50%, -50%) translateX(-6px);
+  }
+  40%,
+  80% {
+    transform: translate(-50%, -50%) translateX(6px);
   }
 }
 
